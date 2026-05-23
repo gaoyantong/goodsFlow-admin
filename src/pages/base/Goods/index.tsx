@@ -1,20 +1,35 @@
-import { PlusOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ImportOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   ModalForm,
   PageContainer,
   ProColumns,
   ProFormText,
+  ProFormUploadDragger,
   ProTable,
 } from '@ant-design/pro-components';
 import type { ActionType } from '@ant-design/pro-components';
 import { Button, message, Popconfirm } from 'antd';
+import type { Key } from 'react';
 import { useRef, useState } from 'react';
-import { deleteGoods, GoodsRecord, listGoods, saveGoods } from '@/services/base';
+import {
+  deleteGoods,
+  downloadBlob,
+  exportGoods,
+  GoodsRecord,
+  goodsTemplate,
+  importGoods,
+  listGoods,
+  saveGoods,
+} from '@/services/base';
 
 export default function GoodsPage() {
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<GoodsRecord>();
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [fileList, setFileList] = useState<File[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
   const columns: ProColumns<GoodsRecord>[] = [
     { title: '货品ID', dataIndex: 'goodsId' },
@@ -51,11 +66,47 @@ export default function GoodsPage() {
         rowKey="id"
         actionRef={actionRef}
         columns={columns}
+        rowSelection={{
+          selectedRowKeys,
+          preserveSelectedRowKeys: true,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
         request={async (params) => {
           const result = await listGoods(params);
           return { data: result.data, total: result.total, success: result.code === 0 };
         }}
         toolBarRender={() => [
+          <Button
+            key="template"
+            icon={<DownloadOutlined />}
+            onClick={async () => {
+              const blob = await goodsTemplate();
+              downloadBlob(blob, '货品资料导入模板.xlsx');
+            }}
+          >
+            模板下载
+          </Button>,
+          <Button
+            key="import"
+            icon={<ImportOutlined />}
+            onClick={() => setImportOpen(true)}
+          >
+            导入
+          </Button>,
+          <Button
+            key="export"
+            icon={<DownloadOutlined />}
+            onClick={async () => {
+              if (!selectedRowKeys.length) {
+                message.warning('请先勾选要导出的货品');
+                return;
+              }
+              const blob = await exportGoods({ ids: selectedRowKeys });
+              downloadBlob(blob, '货品资料.xlsx');
+            }}
+          >
+            导出
+          </Button>,
           <Button
             key="create"
             type="primary"
@@ -88,6 +139,54 @@ export default function GoodsPage() {
         <ProFormText name="manufacturer" label="生产厂商" rules={[{ required: true }]} />
         <ProFormText name="specification" label="规格" rules={[{ required: true }]} />
         <ProFormText name="unit" label="货品单位" rules={[{ required: true }]} />
+      </ModalForm>
+      <ModalForm
+        title="导入货品资料"
+        open={importOpen}
+        loading={importing}
+        modalProps={{
+          destroyOnClose: true,
+          onCancel: () => {
+            setImportOpen(false);
+            setFileList([]);
+          },
+        }}
+        onFinish={async () => {
+          if (!fileList.length) {
+            message.warning('请选择导入文件');
+            return false;
+          }
+          setImporting(true);
+          try {
+            const result = await importGoods(fileList[0]);
+            if (result.code !== 0) {
+              message.error(result.message);
+              return false;
+            }
+            message.success(result.data || '导入成功');
+            setImportOpen(false);
+            setFileList([]);
+            actionRef.current?.reload();
+            return true;
+          } finally {
+            setImporting(false);
+          }
+        }}
+      >
+        <ProFormUploadDragger
+          name="file"
+          max={1}
+          accept=".xlsx,.xls"
+          description=""
+          rules={[{ required: true, message: '请选择导入文件' }]}
+          fieldProps={{
+            beforeUpload: (file) => {
+              setFileList([file]);
+              return false;
+            },
+            onRemove: () => setFileList([]),
+          }}
+        />
       </ModalForm>
     </PageContainer>
   );

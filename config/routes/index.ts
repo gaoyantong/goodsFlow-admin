@@ -38,6 +38,28 @@ export default [
     ],
   },
   {
+    name: '数据处理',
+    path: '/flow',
+    icon: 'PartitionOutlined',
+    routes: [
+      {
+        name: '数据录入',
+        path: '/flow/task',
+        component: './flow/Task',
+      },
+      {
+        name: '配送入库数据',
+        path: '/flow/inbound',
+        component: './flow/Inbound',
+      },
+      {
+        name: '零售数据',
+        path: '/flow/retail',
+        component: './flow/Retail',
+      },
+    ],
+  },
+  {
     name: '系统管理',
     path: '/sys',
     icon: 'SettingOutlined',

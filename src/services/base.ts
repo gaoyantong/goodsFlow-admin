@@ -43,6 +43,30 @@ export async function deleteGoods(id: string) {
   });
 }
 
+export async function importGoods(file: File) {
+  const data = new FormData();
+  data.append('file', file);
+  return request<ApiResponse<string>>('/api/base/goods/import', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function exportGoods(params: Record<string, unknown>) {
+  return request<Blob>('/api/base/goods/export', {
+    method: 'POST',
+    data: params,
+    responseType: 'blob',
+  });
+}
+
+export async function goodsTemplate() {
+  return request<Blob>('/api/base/goods/template', {
+    method: 'GET',
+    responseType: 'blob',
+  });
+}
+
 export async function listStores(params: Record<string, unknown>) {
   return request<ApiResponse<StoreRecord[]>>('/api/base/store/list', {
     method: 'POST',
@@ -62,4 +86,39 @@ export async function deleteStore(id: string) {
     method: 'POST',
     data: { id },
   });
+}
+
+export async function importStores(file: File) {
+  const data = new FormData();
+  data.append('file', file);
+  return request<ApiResponse<string>>('/api/base/store/import', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function exportStores(params: Record<string, unknown>) {
+  return request<Blob>('/api/base/store/export', {
+    method: 'POST',
+    data: params,
+    responseType: 'blob',
+  });
+}
+
+export async function storeTemplate() {
+  return request<Blob>('/api/base/store/template', {
+    method: 'GET',
+    responseType: 'blob',
+  });
+}
+
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
