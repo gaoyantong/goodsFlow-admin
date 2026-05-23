@@ -5,6 +5,7 @@ import { Avatar, Button, Dropdown, message, Space } from 'antd';
 import type { MenuProps } from 'antd';
 import type { AuthorizedMenu, CurrentUser } from '@/services/auth';
 import { authorizedMenus, currentUser, logout } from '@/services/auth';
+import PageTabs from '@/components/PageTabs';
 
 const loginPath = '/login';
 
@@ -63,6 +64,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
   return {
     pageTitleRender: false,
     avatarProps: false,
+    childrenRender: (children) => <PageTabs>{children}</PageTabs>,
     rightContentRender: () => initialState?.currentUser ? (
       <Dropdown
         placement="bottomRight"
@@ -115,4 +117,23 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
 
 export const request = {
   credentials: 'include' as const,
+  errorConfig: {
+    errorThrower: (res: any) => {
+      if (res?.code !== 0) {
+        const error: any = new Error(res?.message || '请求失败');
+        error.name = 'BizError';
+        error.info = res;
+        throw error;
+      }
+    },
+    errorHandler: (error: any) => {
+      const status = error?.response?.status;
+      if (status === 401) {
+        message.warning('登录已过期，请重新登录');
+        history.replace(loginPath);
+        return;
+      }
+      message.error(error?.message || '请求失败');
+    },
+  },
 };

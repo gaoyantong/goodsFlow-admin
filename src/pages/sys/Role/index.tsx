@@ -19,6 +19,7 @@ import {
   RoleRecord,
   saveRole,
 } from '@/services/system';
+import { tablePagination } from '@/utils/pagination';
 
 function ResourceDrawer({ roleId, onClose }: { roleId?: string; onClose: () => void }) {
   const [treeData, setTreeData] = useState<any[]>();
@@ -68,8 +69,8 @@ export default function RolePage() {
   const [roleId, setRoleId] = useState<string>();
 
   const columns: ProColumns<RoleRecord>[] = [
-    { title: '角色名称', dataIndex: 'name' },
-    { title: '角色编码', dataIndex: 'roleCode', search: false },
+    { title: '角色名称', dataIndex: 'name', width: 220, ellipsis: true },
+    { title: '角色编码', dataIndex: 'roleCode', search: false, width: 180, ellipsis: true },
     { title: '排序', dataIndex: 'sortedNum', search: false, width: 80 },
     {
       title: '操作',
@@ -103,6 +104,9 @@ export default function RolePage() {
           const result = await listRoles(params);
           return { data: result.data, total: result.total, success: result.code === 0 };
         }}
+        scroll={{ x: 760 }}
+        form={{ syncToUrl: true }}
+        pagination={tablePagination}
         toolBarRender={() => [
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>新增</Button>,
         ]}

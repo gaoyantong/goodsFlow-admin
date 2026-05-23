@@ -34,11 +34,11 @@ export default function ConstantPage() {
   const [open, setOpen] = useState(false);
 
   const columns: ProColumns<ConstantRecord>[] = [
-    { title: '常量编码', dataIndex: 'code' },
-    { title: '常量名称', dataIndex: 'name' },
-    { title: '上级编码', dataIndex: 'parent' },
-    { title: '值', dataIndex: 'vals', search: false, ellipsis: true },
-    { title: '备注', dataIndex: 'remarks', search: false },
+    { title: '常量编码', dataIndex: 'code', width: 180, ellipsis: true },
+    { title: '常量名称', dataIndex: 'name', width: 220, ellipsis: true },
+    { title: '上级编码', dataIndex: 'parent', width: 180, ellipsis: true },
+    { title: '值', dataIndex: 'vals', search: false, width: 260, ellipsis: true },
+    { title: '备注', dataIndex: 'remarks', search: false, width: 260, ellipsis: true },
     {
       title: '操作',
       valueType: 'option',
@@ -71,6 +71,7 @@ export default function ConstantPage() {
           const result = await listConstants(params);
           return { data: toTree(result.data || []), success: result.code === 0 };
         }}
+        scroll={{ x: 1250 }}
         toolBarRender={() => [
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>新增</Button>,
         ]}

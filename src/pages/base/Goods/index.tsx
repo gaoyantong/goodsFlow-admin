@@ -8,6 +8,7 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import type { ActionType } from '@ant-design/pro-components';
+import { useModel } from '@umijs/max';
 import { Button, message, Popconfirm } from 'antd';
 import type { Key } from 'react';
 import { useRef, useState } from 'react';
@@ -21,9 +22,13 @@ import {
   listGoods,
   saveGoods,
 } from '@/services/base';
+import { tablePagination } from '@/utils/pagination';
 
 export default function GoodsPage() {
   const actionRef = useRef<ActionType>();
+  const { initialState } = (useModel as any)('@@initialState');
+  const roleCode = initialState?.currentUser?.roleCode;
+  const canDelete = roleCode === 'SUPER_ADMIN' || roleCode === 'ADMIN';
   const [editing, setEditing] = useState<GoodsRecord>();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -32,11 +37,11 @@ export default function GoodsPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
   const columns: ProColumns<GoodsRecord>[] = [
-    { title: '货品ID', dataIndex: 'goodsId' },
-    { title: '通用名', dataIndex: 'genericName' },
-    { title: '生产厂商', dataIndex: 'manufacturer', search: false },
-    { title: '规格', dataIndex: 'specification', search: false },
-    { title: '单位', dataIndex: 'unit', search: false, width: 96 },
+    { title: '货品ID', dataIndex: 'goodsId', width: 120, ellipsis: true },
+    { title: '通用名', dataIndex: 'genericName', width: 220, ellipsis: true },
+    { title: '生产厂商', dataIndex: 'manufacturer', search: false, width: 360, ellipsis: true },
+    { title: '规格', dataIndex: 'specification', search: false, width: 180, ellipsis: true },
+    { title: '单位', dataIndex: 'unit', search: false, width: 96, ellipsis: true },
     {
       title: '操作',
       valueType: 'option',
@@ -45,18 +50,20 @@ export default function GoodsPage() {
         <a key="edit" onClick={() => { setEditing(record); setOpen(true); }}>
           编辑
         </a>,
-        <Popconfirm
-          key="delete"
-          title="确认删除该货品资料？"
-          onConfirm={async () => {
-            const result = await deleteGoods(record.id!);
-            result.code === 0 ? message.success('已删除') : message.error(result.message);
-            actionRef.current?.reload();
-          }}
-        >
-          <a>删除</a>
-        </Popconfirm>,
-      ],
+        canDelete ? (
+          <Popconfirm
+            key="delete"
+            title="确认删除该货品资料？"
+            onConfirm={async () => {
+              const result = await deleteGoods(record.id!);
+              result.code === 0 ? message.success('已删除') : message.error(result.message);
+              actionRef.current?.reload();
+            }}
+          >
+            <a>删除</a>
+          </Popconfirm>
+        ) : null,
+      ].filter(Boolean),
     },
   ];
 
@@ -75,6 +82,9 @@ export default function GoodsPage() {
           const result = await listGoods(params);
           return { data: result.data, total: result.total, success: result.code === 0 };
         }}
+        scroll={{ x: 1120 }}
+        form={{ syncToUrl: true }}
+        pagination={tablePagination}
         toolBarRender={() => [
           <Button
             key="template"
@@ -86,11 +96,7 @@ export default function GoodsPage() {
           >
             模板下载
           </Button>,
-          <Button
-            key="import"
-            icon={<ImportOutlined />}
-            onClick={() => setImportOpen(true)}
-          >
+          <Button key="import" icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>
             导入
           </Button>,
           <Button

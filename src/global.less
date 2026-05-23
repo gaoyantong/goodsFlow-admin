@@ -5,5 +5,39 @@ body,
 }
 
 .ant-pro-page-container-children-container {
+  max-width: 1440px;
+  margin-inline: auto;
   padding-block-end: 24px;
+}
+
+.ant-pro-table {
+  .ant-table {
+    table-layout: fixed;
+  }
+
+  .ant-table-cell {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ant-table-cell .ant-space,
+  .ant-table-cell .ant-space-item {
+    white-space: nowrap;
+  }
+
+  .ant-table-cell > span,
+  .ant-table-cell > div:not(.ant-space):not(.ant-form-item) {
+    overflow: hidden;
+    max-width: 100%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td,
+  .ant-table-summary > tr > td {
+    height: 48px;
+    max-height: 48px;
+  }
 }

@@ -13,33 +13,21 @@ import type { ActionType } from '@ant-design/pro-components';
 import { Button, message, Popconfirm } from 'antd';
 import { history } from '@umijs/max';
 import { useRef, useState } from 'react';
-import { listGoods, listStores } from '@/services/base';
 import { deleteFlowTask, FlowTaskRecord, listFlowTasks, saveFlowTask } from '@/services/flow';
+import { tablePagination } from '@/utils/pagination';
+import { loadGoodsOptions, loadStoreOptions, loadTaskNoOptions } from '../taskOptions';
 
-const loadGoodsOptions = async (params?: { keyWords?: string }) => {
-  const keyword = params?.keyWords;
-  const result = await listGoods({
-    current: 1,
-    pageSize: 100,
-    genericName: keyword,
-  });
-  return (result.data || []).map((item) => ({
-    label: `${item.goodsId} ${item.genericName} ${item.specification}`,
-    value: item.goodsId,
-  }));
+const getDateValue = (value?: string) => {
+  if (!value) return undefined;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? undefined : time;
 };
 
-const loadStoreOptions = async (params?: { keyWords?: string }) => {
-  const keyword = params?.keyWords;
-  const result = await listStores({
-    current: 1,
-    pageSize: 100,
-    storeName: keyword,
-  });
-  return (result.data || []).map((item) => ({
-    label: `${item.storeId} ${item.storeName}`,
-    value: item.storeId,
-  }));
+const getDateRangeDays = (start?: string, end?: string) => {
+  const startTime = getDateValue(start);
+  const endTime = getDateValue(end);
+  if (startTime === undefined || endTime === undefined) return undefined;
+  return Math.floor((endTime - startTime) / 86400000) + 1;
 };
 
 export default function FlowTaskPage() {
@@ -47,46 +35,54 @@ export default function FlowTaskPage() {
   const [open, setOpen] = useState(false);
 
   const columns: ProColumns<FlowTaskRecord>[] = [
-    { title: '任务编号', dataIndex: 'taskNo', search: false },
     {
-      title: '货品ID',
-      dataIndex: 'goodsId',
+      title: '任务编号',
+      dataIndex: 'taskNo',
       valueType: 'select',
-      request: loadGoodsOptions,
+      order: 30,
+      request: loadTaskNoOptions,
+      width: 180,
+      ellipsis: true,
       fieldProps: {
         showSearch: true,
         filterOption: false,
       },
     },
-    { title: '待配送数量', dataIndex: 'pendingDeliveryQty', search: false },
-    { title: '配送开始日期', dataIndex: 'deliveryStartDate', valueType: 'date', search: false },
-    { title: '配送截止日期', dataIndex: 'deliveryEndDate', valueType: 'date', search: false },
-    { title: '单笔零售最大数量', dataIndex: 'maxRetailQtyPerOrder', search: false },
-    { title: '生成零售天数', dataIndex: 'retailDays', search: false },
-    { title: '批号', dataIndex: 'batchNo' },
-    { title: '有效期', dataIndex: 'expiryDate', valueType: 'date', search: false },
     {
-      title: '状态',
-      dataIndex: 'status',
-      valueEnum: {
-        GENERATED: { text: '已生成', status: 'Success' },
-        PENDING: { text: '待处理', status: 'Default' },
+      title: '货品',
+      dataIndex: 'goodsId',
+      valueType: 'select',
+      order: 29,
+      request: loadGoodsOptions,
+      width: 220,
+      ellipsis: true,
+      fieldProps: {
+        showSearch: true,
+        filterOption: false,
       },
     },
+    { title: '待配送数量', dataIndex: 'pendingDeliveryQty', search: false, width: 130, align: 'right' },
+    { title: '配送开始日期', dataIndex: 'deliveryStartDate', valueType: 'date', search: false, width: 140 },
+    { title: '配送截止日期', dataIndex: 'deliveryEndDate', valueType: 'date', search: false, width: 140 },
+    { title: '单笔零售最大数量', dataIndex: 'maxRetailQtyPerOrder', search: false, width: 170, align: 'right' },
+    { title: '生成零售天数', dataIndex: 'retailDays', search: false, width: 140, align: 'right' },
+    { title: '批号', dataIndex: 'batchNo', order: 28, width: 140, ellipsis: true },
+    { title: '有效期', dataIndex: 'expiryDate', valueType: 'date', search: false, width: 120 },
     {
       title: '操作',
       valueType: 'option',
       width: 220,
+      fixed: 'right',
       render: (_, record) => [
-        <a key="inbound" onClick={() => history.push(`/flow/inbound?taskId=${record.id}`)}>
+        <a key="inbound" onClick={() => history.push(`/flow/inbound?taskId=${record.id}&taskNo=${encodeURIComponent(record.taskNo || '')}`)}>
           入库数据
         </a>,
-        <a key="retail" onClick={() => history.push(`/flow/retail?taskId=${record.id}`)}>
+        <a key="retail" onClick={() => history.push(`/flow/retail?taskId=${record.id}&taskNo=${encodeURIComponent(record.taskNo || '')}`)}>
           零售数据
         </a>,
         <Popconfirm
           key="delete"
-          title="确认删除该录入记录及生成的数据？"
+          title="确认删除该药品录入记录及生成的数据？"
           onConfirm={async () => {
             const result = await deleteFlowTask(record.id!);
             result.code === 0 ? message.success('已删除') : message.error(result.message);
@@ -109,23 +105,31 @@ export default function FlowTaskPage() {
           const result = await listFlowTasks(params);
           return { data: result.data, total: result.total, success: result.code === 0 };
         }}
+        scroll={{ x: 1500 }}
+        form={{ syncToUrl: true }}
+        pagination={tablePagination}
         toolBarRender={() => [
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setOpen(true)}>
-            新增出入库记录
+            新增药品录入
           </Button>,
         ]}
       />
       <ModalForm<FlowTaskRecord>
-        title="新增出入库记录"
+        title="新增药品录入"
         open={open}
         modalProps={{ destroyOnClose: true, onCancel: () => setOpen(false) }}
         onFinish={async (values) => {
+          const rangeDays = getDateRangeDays(values.deliveryStartDate, values.deliveryEndDate);
+          if (rangeDays !== undefined && rangeDays < 1) {
+            message.warning('配送开始日期不能晚于配送截止日期');
+            return false;
+          }
           const result = await saveFlowTask(values);
           if (result.code !== 0) {
             message.error(result.message);
             return false;
           }
-          message.success('已生成配送入库和零售数据');
+          message.success('已生成入库和零售数据');
           setOpen(false);
           actionRef.current?.reload();
           return true;
@@ -133,7 +137,7 @@ export default function FlowTaskPage() {
       >
         <ProFormSelect
           name="goodsId"
-          label="货品ID"
+          label="货品"
           request={loadGoodsOptions}
           fieldProps={{
             showSearch: true,

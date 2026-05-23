@@ -18,6 +18,7 @@ import {
   UserRecord,
   userRoles,
 } from '@/services/system';
+import { tablePagination } from '@/utils/pagination';
 
 export default function UserPage() {
   const actionRef = useRef<ActionType>();
@@ -25,12 +26,12 @@ export default function UserPage() {
   const [open, setOpen] = useState(false);
 
   const columns: ProColumns<UserRecord>[] = [
-    { title: '工号', dataIndex: 'workNum' },
-    { title: '姓名', dataIndex: 'name' },
-    { title: '登录账号', dataIndex: 'loginName' },
-    { title: '角色', dataIndex: 'roleName', search: false },
-    { title: '邮箱', dataIndex: 'email', search: false },
-    { title: '说明', dataIndex: 'description', search: false },
+    { title: '工号', dataIndex: 'workNum', width: 140, ellipsis: true },
+    { title: '姓名', dataIndex: 'name', width: 140, ellipsis: true },
+    { title: '登录账号', dataIndex: 'loginName', width: 160, ellipsis: true },
+    { title: '角色', dataIndex: 'roleName', search: false, width: 160, ellipsis: true },
+    { title: '邮箱', dataIndex: 'email', search: false, width: 220, ellipsis: true },
+    { title: '说明', dataIndex: 'description', search: false, width: 260, ellipsis: true },
     {
       title: '操作',
       valueType: 'option',
@@ -62,6 +63,9 @@ export default function UserPage() {
           const result = await listUsers(params);
           return { data: result.data, total: result.total, success: result.code === 0 };
         }}
+        scroll={{ x: 1230 }}
+        form={{ syncToUrl: true }}
+        pagination={tablePagination}
         toolBarRender={() => [
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>
             新增
@@ -88,7 +92,15 @@ export default function UserPage() {
         <ProFormText name="workNum" label="工号" />
         <ProFormText name="name" label="姓名" />
         <ProFormText name="loginName" label="登录账号" rules={[{ required: true }]} />
-        <ProFormText.Password name="password" label={editing?.id ? '新密码' : '密码'} rules={editing?.id ? [] : [{ required: true }]} />
+        <ProFormText.Password
+          name="password"
+          label={editing?.id ? '新密码' : '密码'}
+          fieldProps={{
+            autoComplete: 'new-password',
+            visibilityToggle: false,
+          }}
+          rules={editing?.id ? [] : [{ required: true }]}
+        />
         <ProFormSelect
           name="role"
           label="角色"

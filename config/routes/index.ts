@@ -43,12 +43,12 @@ export default [
     icon: 'PartitionOutlined',
     routes: [
       {
-        name: '数据录入',
+        name: '药品录入',
         path: '/flow/task',
         component: './flow/Task',
       },
       {
-        name: '配送入库数据',
+        name: '入库数据',
         path: '/flow/inbound',
         component: './flow/Inbound',
       },

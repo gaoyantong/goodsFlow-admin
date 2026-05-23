@@ -29,12 +29,12 @@ export default function DictPage() {
   const [open, setOpen] = useState(false);
 
   const columns: ProColumns<DictRecord>[] = [
-    { title: '字典编码', dataIndex: 'code' },
-    { title: '中文名称', dataIndex: 'nameZhcn' },
-    { title: '英文名称', dataIndex: 'nameEnus', search: false },
-    { title: '上级编码', dataIndex: 'parent' },
-    { title: '值', dataIndex: 'vals', search: false },
-    { title: '备注', dataIndex: 'remarks', search: false },
+    { title: '字典编码', dataIndex: 'code', width: 180, ellipsis: true },
+    { title: '中文名称', dataIndex: 'nameZhcn', width: 180, ellipsis: true },
+    { title: '英文名称', dataIndex: 'nameEnus', search: false, width: 180, ellipsis: true },
+    { title: '上级编码', dataIndex: 'parent', width: 180, ellipsis: true },
+    { title: '值', dataIndex: 'vals', search: false, width: 220, ellipsis: true },
+    { title: '备注', dataIndex: 'remarks', search: false, width: 260, ellipsis: true },
     {
       title: '操作',
       valueType: 'option',
@@ -67,6 +67,7 @@ export default function DictPage() {
           const result = await listDicts(params);
           return { data: toTree(result.data || []), success: result.code === 0 };
         }}
+        scroll={{ x: 1350 }}
         toolBarRender={() => [
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>新增</Button>,
         ]}

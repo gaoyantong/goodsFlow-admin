@@ -36,13 +36,13 @@ export default function ResourcePage() {
   const [open, setOpen] = useState(false);
 
   const columns: ProColumns<ResourceRecord>[] = [
-    { title: '资源名称', dataIndex: 'name' },
-    { title: '中文名称', dataIndex: 'nameCh', search: false },
-    { title: '图标', dataIndex: 'icon', search: false },
-    { title: '路径', dataIndex: 'path' },
+    { title: '资源名称', dataIndex: 'name', width: 200, ellipsis: true },
+    { title: '中文名称', dataIndex: 'nameCh', search: false, width: 180, ellipsis: true },
+    { title: '图标', dataIndex: 'icon', search: false, width: 140, ellipsis: true },
+    { title: '路径', dataIndex: 'path', width: 260, ellipsis: true },
     { title: '类型', dataIndex: 'type', search: false, width: 90 },
     { title: '排序', dataIndex: 'sortedNum', search: false, width: 80 },
-    { title: '说明', dataIndex: 'description', search: false },
+    { title: '说明', dataIndex: 'description', search: false, width: 260, ellipsis: true },
     {
       title: '操作',
       valueType: 'option',
@@ -76,6 +76,7 @@ export default function ResourcePage() {
           setRows(result.data || []);
           return { data: toTree(result.data || []), success: result.code === 0 };
         }}
+        scroll={{ x: 1360 }}
         toolBarRender={() => [
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>
             新增

@@ -21,6 +21,7 @@ export type FlowTaskRecord = {
 export type DeliveryInboundRecord = {
   id?: string;
   taskId: string;
+  taskNo?: string;
   businessDate: string;
   storeId: string;
   storeName: string;
@@ -37,6 +38,7 @@ export type DeliveryInboundRecord = {
 export type RetailOutboundRecord = {
   id?: string;
   taskId: string;
+  taskNo?: string;
   inboundId: string;
   businessDate: string;
   storeId: string;
@@ -78,9 +80,25 @@ export async function listDeliveryInbound(params: Record<string, unknown>) {
   });
 }
 
+export async function exportDeliveryInbound(params: Record<string, unknown>) {
+  return request<Blob>('/api/flow/inbound/export', {
+    method: 'POST',
+    data: params,
+    responseType: 'blob',
+  });
+}
+
 export async function listRetailOutbound(params: Record<string, unknown>) {
   return request<ApiResponse<RetailOutboundRecord[]>>('/api/flow/retail/list', {
     method: 'POST',
     data: params,
+  });
+}
+
+export async function exportRetailOutbound(params: Record<string, unknown>) {
+  return request<Blob>('/api/flow/retail/export', {
+    method: 'POST',
+    data: params,
+    responseType: 'blob',
   });
 }
