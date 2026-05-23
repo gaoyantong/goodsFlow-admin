@@ -1,0 +1,45 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: auto;
+  background: #f5f7fb url('https://gw.alipayobjects.com/zos/rmsportal/TVYTbAXWheQpRcWDaDMu.svg') center 108px / 100% no-repeat;
+}
+
+.content {
+  flex: 1;
+  padding: 112px 0 32px;
+}
+
+.top {
+  text-align: center;
+}
+
+.main {
+  margin: 0 auto;
+  width: 328px;
+}
+
+.brand {
+  color: rgba(0, 0, 0, 0.88);
+  font-family: Avenir, 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-size: 33px;
+  font-weight: 600;
+  line-height: 44px;
+}
+
+.subtitle {
+  color: rgba(0, 0, 0, 0.45);
+  margin: 12px 0 40px;
+}
+
+@media screen and (max-width: 576px) {
+  .content {
+    padding-top: 72px;
+  }
+
+  .main {
+    max-width: 328px;
+    width: calc(100% - 32px);
+  }
+}
