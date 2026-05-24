@@ -12,8 +12,9 @@ import {
 import type { ActionType } from '@ant-design/pro-components';
 import { Button, message, Popconfirm } from 'antd';
 import { history } from '@umijs/max';
+import type { Key } from 'react';
 import { useRef, useState } from 'react';
-import { deleteFlowTask, FlowTaskRecord, listFlowTasks, saveFlowTask } from '@/services/flow';
+import { deleteFlowTask, deleteFlowTaskBatch, FlowTaskRecord, listFlowTasks, saveFlowTask } from '@/services/flow';
 import { tablePagination } from '@/utils/pagination';
 import { loadGoodsOptions, loadStoreOptions, loadTaskNoOptions } from '../taskOptions';
 
@@ -33,6 +34,7 @@ const getDateRangeDays = (start?: string, end?: string) => {
 export default function FlowTaskPage() {
   const actionRef = useRef<ActionType>();
   const [open, setOpen] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
   const columns: ProColumns<FlowTaskRecord>[] = [
     {
@@ -101,6 +103,11 @@ export default function FlowTaskPage() {
         rowKey="id"
         actionRef={actionRef}
         columns={columns}
+        rowSelection={{
+          selectedRowKeys,
+          preserveSelectedRowKeys: true,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
         request={async (params) => {
           const result = await listFlowTasks(params);
           return { data: result.data, total: result.total, success: result.code === 0 };
@@ -109,6 +116,24 @@ export default function FlowTaskPage() {
         form={{ syncToUrl: true }}
         pagination={tablePagination}
         toolBarRender={() => [
+          <Popconfirm
+            key="batchDelete"
+            title="确认删除勾选的药品录入记录及生成的数据？"
+            onConfirm={async () => {
+              if (!selectedRowKeys.length) {
+                message.warning('请先勾选要删除的药品录入记录');
+                return;
+              }
+              const result = await deleteFlowTaskBatch(selectedRowKeys.map(String));
+              result.code === 0 ? message.success('已删除') : message.error(result.message);
+              setSelectedRowKeys([]);
+              actionRef.current?.reload();
+            }}
+          >
+            <Button danger disabled={!selectedRowKeys.length}>
+              批量删除
+            </Button>
+          </Popconfirm>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setOpen(true)}>
             新增药品录入
           </Button>,

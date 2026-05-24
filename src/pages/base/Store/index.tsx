@@ -14,6 +14,7 @@ import type { Key } from 'react';
 import { useRef, useState } from 'react';
 import {
   deleteStore,
+  deleteStoreBatch,
   downloadBlob,
   exportStores,
   importStores,
@@ -28,7 +29,8 @@ export default function StorePage() {
   const actionRef = useRef<ActionType>();
   const { initialState } = (useModel as any)('@@initialState');
   const roleCode = initialState?.currentUser?.roleCode;
-  const canDelete = roleCode === 'SUPER_ADMIN' || roleCode === 'ADMIN';
+  const roleName = initialState?.currentUser?.roleName;
+  const canDelete = ['SUPER_ADMIN', 'ADMIN'].includes(roleCode) || ['超级管理员', '管理员'].includes(roleName);
   const [editing, setEditing] = useState<StoreRecord>();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -83,6 +85,26 @@ export default function StorePage() {
         form={{ syncToUrl: true }}
         pagination={tablePagination}
         toolBarRender={() => [
+          canDelete ? (
+            <Popconfirm
+              key="batchDelete"
+              title="确认删除勾选的门店资料？"
+              onConfirm={async () => {
+                if (!selectedRowKeys.length) {
+                  message.warning('请先勾选要删除的门店');
+                  return;
+                }
+                const result = await deleteStoreBatch(selectedRowKeys.map(String));
+                result.code === 0 ? message.success('已删除') : message.error(result.message);
+                setSelectedRowKeys([]);
+                actionRef.current?.reload();
+              }}
+            >
+              <Button danger disabled={!selectedRowKeys.length}>
+                批量删除
+              </Button>
+            </Popconfirm>
+          ) : null,
           <Button
             key="template"
             icon={<DownloadOutlined />}
@@ -118,7 +140,7 @@ export default function StorePage() {
           >
             新增
           </Button>,
-        ]}
+        ].filter(Boolean)}
       />
       <ModalForm<StoreRecord>
         title={editing?.id ? '编辑门店资料' : '新增门店资料'}

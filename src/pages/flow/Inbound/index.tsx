@@ -1,8 +1,7 @@
 import { DownloadOutlined } from '@ant-design/icons';
-import { ModalForm, PageContainer, ProColumns, ProFormDatePicker, ProTable } from '@ant-design/pro-components';
+import { ModalForm, PageContainer, ProColumns, ProFormDatePicker, ProFormDateRangePicker, ProTable } from '@ant-design/pro-components';
 import { useLocation } from '@umijs/max';
 import { Button, message, Table } from 'antd';
-import type { Key } from 'react';
 import { useState } from 'react';
 import { downloadBlob } from '@/services/base';
 import { DeliveryInboundRecord, exportDeliveryInbound, listDeliveryInbound } from '@/services/flow';
@@ -15,6 +14,13 @@ const monthValue = (value: any) => {
   }
   const formatted = typeof value === 'string' ? value : value.format?.('YYYY-MM');
   return formatted?.slice(0, 7);
+};
+
+const dateValue = (value: any) => {
+  if (!value) {
+    return undefined;
+  }
+  return typeof value === 'string' ? value : value.format?.('YYYY-MM-DD');
 };
 
 const inboundFilename = (exportMonth: string) => {
@@ -30,8 +36,8 @@ export default function DeliveryInboundPage() {
   const searchParams = new URLSearchParams(location.search);
   const taskId = searchParams.get('taskId') || undefined;
   const taskNo = searchParams.get('taskNo') || undefined;
-  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [monthOpen, setMonthOpen] = useState(false);
+  const [dateRangeOpen, setDateRangeOpen] = useState(false);
   const [excludeBatchNo, setExcludeBatchNo] = useState(false);
 
   const columns: ProColumns<DeliveryInboundRecord>[] = [
@@ -57,6 +63,7 @@ export default function DeliveryInboundPage() {
       title: '货品',
       dataIndex: 'goodsId',
       valueType: 'select',
+      hideInTable: true,
       order: 28,
       request: loadGoodsOptions,
       fieldProps: { showSearch: true, filterOption: false },
@@ -80,13 +87,16 @@ export default function DeliveryInboundPage() {
       renderText: (_, record) => formatStore(record),
     },
     {
-      title: '药品',
+      title: '货品',
       dataIndex: 'genericName',
       search: false,
       width: 280,
       ellipsis: true,
       renderText: (_, record) => formatGoods(record),
     },
+    { title: '规格', dataIndex: 'specification', search: false, width: 140, ellipsis: true },
+    { title: '生产厂商', dataIndex: 'manufacturer', search: false, width: 240, ellipsis: true },
+    { title: '货品单位', dataIndex: 'unit', search: false, width: 96, ellipsis: true },
     { title: '批号', dataIndex: 'batchNo', width: 120, ellipsis: true },
     { title: '有效期', dataIndex: 'expiryDate', valueType: 'date', search: false, width: 120 },
     { title: '入库数量', dataIndex: 'inboundQty', search: false, width: 110, align: 'right' },
@@ -99,11 +109,6 @@ export default function DeliveryInboundPage() {
         columns={columns}
         params={{ taskId, taskNo }}
         form={{ initialValues: { taskNo }, syncToUrl: true }}
-        rowSelection={{
-          selectedRowKeys,
-          preserveSelectedRowKeys: true,
-          onChange: (keys) => setSelectedRowKeys(keys),
-        }}
         request={async (params, sort) => {
           const { businessDateRange, ...rest } = params;
           const result = await listDeliveryInbound({
@@ -119,30 +124,21 @@ export default function DeliveryInboundPage() {
           const total = pageData.reduce((sum, item) => sum + (Number(item.inboundQty) || 0), 0);
           return (
             <Table.Summary.Row>
-              <Table.Summary.Cell index={0} />
-              <Table.Summary.Cell index={1} colSpan={4}>
+              <Table.Summary.Cell index={0} colSpan={7}>
                 合计数量
               </Table.Summary.Cell>
-              <Table.Summary.Cell index={5} />
-              <Table.Summary.Cell index={6} />
-              <Table.Summary.Cell index={7} align="right">{total}</Table.Summary.Cell>
+              <Table.Summary.Cell index={7} />
+              <Table.Summary.Cell index={8} align="right">{total}</Table.Summary.Cell>
             </Table.Summary.Row>
           );
         }}
         toolBarRender={() => [
           <Button
-            key="selectedExport"
+            key="dateRangeExport"
             icon={<DownloadOutlined />}
-            onClick={async () => {
-              if (!selectedRowKeys.length) {
-                message.warning('请先勾选要导出的入库数据');
-                return;
-              }
-              const blob = await exportDeliveryInbound({ ids: selectedRowKeys.map(String) });
-              downloadBlob(blob, '入库数据.xlsx');
-            }}
+            onClick={() => setDateRangeOpen(true)}
           >
-            导出勾选
+            日期范围导出
           </Button>,
           <Button
             key="monthExport"
@@ -165,7 +161,7 @@ export default function DeliveryInboundPage() {
             按月导出无批号
           </Button>,
         ]}
-        scroll={{ x: 1080 }}
+        scroll={{ x: 1460 }}
       />
       <ModalForm<{ exportMonth: any }>
         title={excludeBatchNo ? '按月导出入库数据无批号' : '按月导出入库数据'}
@@ -195,6 +191,30 @@ export default function DeliveryInboundPage() {
           label="月份"
           fieldProps={{ picker: 'month' }}
           rules={[{ required: true, message: '请选择导出月份' }]}
+        />
+      </ModalForm>
+      <ModalForm<{ exportDateRange: any[] }>
+        title="日期范围导出入库数据"
+        open={dateRangeOpen}
+        modalProps={{ destroyOnClose: true, onCancel: () => setDateRangeOpen(false) }}
+        onFinish={async (values) => {
+          const range = values.exportDateRange || [];
+          const start = dateValue(range[0]);
+          const end = dateValue(range[1]);
+          if (!start || !end) {
+            message.warning('请选择导出日期范围');
+            return false;
+          }
+          const blob = await exportDeliveryInbound({ businessDateStart: start, businessDateEnd: end });
+          downloadBlob(blob, `入库数据${start}-${end}.xlsx`);
+          setDateRangeOpen(false);
+          return true;
+        }}
+      >
+        <ProFormDateRangePicker
+          name="exportDateRange"
+          label="业务日期"
+          rules={[{ required: true, message: '请选择导出日期范围' }]}
         />
       </ModalForm>
     </PageContainer>

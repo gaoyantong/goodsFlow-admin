@@ -73,6 +73,13 @@ export async function deleteFlowTask(id: string) {
   });
 }
 
+export async function deleteFlowTaskBatch(ids: string[]) {
+  return request<ApiResponse<void>>('/api/flow/task/deleteBatch', {
+    method: 'POST',
+    data: ids,
+  });
+}
+
 export async function listDeliveryInbound(params: Record<string, unknown>) {
   return request<ApiResponse<DeliveryInboundRecord[]>>('/api/flow/inbound/list', {
     method: 'POST',

@@ -14,6 +14,7 @@ import type { Key } from 'react';
 import { useRef, useState } from 'react';
 import {
   deleteGoods,
+  deleteGoodsBatch,
   downloadBlob,
   exportGoods,
   GoodsRecord,
@@ -28,7 +29,8 @@ export default function GoodsPage() {
   const actionRef = useRef<ActionType>();
   const { initialState } = (useModel as any)('@@initialState');
   const roleCode = initialState?.currentUser?.roleCode;
-  const canDelete = roleCode === 'SUPER_ADMIN' || roleCode === 'ADMIN';
+  const roleName = initialState?.currentUser?.roleName;
+  const canDelete = ['SUPER_ADMIN', 'ADMIN'].includes(roleCode) || ['超级管理员', '管理员'].includes(roleName);
   const [editing, setEditing] = useState<GoodsRecord>();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -86,6 +88,26 @@ export default function GoodsPage() {
         form={{ syncToUrl: true }}
         pagination={tablePagination}
         toolBarRender={() => [
+          canDelete ? (
+            <Popconfirm
+              key="batchDelete"
+              title="确认删除勾选的货品资料？"
+              onConfirm={async () => {
+                if (!selectedRowKeys.length) {
+                  message.warning('请先勾选要删除的货品');
+                  return;
+                }
+                const result = await deleteGoodsBatch(selectedRowKeys.map(String));
+                result.code === 0 ? message.success('已删除') : message.error(result.message);
+                setSelectedRowKeys([]);
+                actionRef.current?.reload();
+              }}
+            >
+              <Button danger disabled={!selectedRowKeys.length}>
+                批量删除
+              </Button>
+            </Popconfirm>
+          ) : null,
           <Button
             key="template"
             icon={<DownloadOutlined />}
@@ -121,7 +143,7 @@ export default function GoodsPage() {
           >
             新增
           </Button>,
-        ]}
+        ].filter(Boolean)}
       />
       <ModalForm<GoodsRecord>
         title={editing?.id ? '编辑货品资料' : '新增货品资料'}

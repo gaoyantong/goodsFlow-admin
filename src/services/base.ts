@@ -43,6 +43,13 @@ export async function deleteGoods(id: string) {
   });
 }
 
+export async function deleteGoodsBatch(ids: string[]) {
+  return request<ApiResponse<void>>('/api/base/goods/deleteBatch', {
+    method: 'POST',
+    data: ids,
+  });
+}
+
 export async function importGoods(file: File) {
   const data = new FormData();
   data.append('file', file);
@@ -85,6 +92,13 @@ export async function deleteStore(id: string) {
   return request<ApiResponse<void>>('/api/base/store/delete', {
     method: 'POST',
     data: { id },
+  });
+}
+
+export async function deleteStoreBatch(ids: string[]) {
+  return request<ApiResponse<void>>('/api/base/store/deleteBatch', {
+    method: 'POST',
+    data: ids,
   });
 }
 
