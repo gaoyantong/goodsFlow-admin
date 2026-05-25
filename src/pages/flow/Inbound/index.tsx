@@ -36,9 +36,9 @@ const dateValue = (value: any) => {
   return typeof value === 'string' ? value : value.format?.('YYYY-MM-DD');
 };
 
-const inboundMonthFilename = (exportMonth: string) => {
+const inboundMonthFilename = (exportMonth: string, excludeBatchNo: boolean) => {
   const month = Number(exportMonth.slice(5, 7));
-  return `中国中药${month}月.xlsx`;
+  return `中国中药${month}月${excludeBatchNo ? '' : '-有批号'}.xlsx`;
 };
 
 const inboundRangeFilename = (start: string, end: string) => `中国中药${start}_${end}.xlsx`;
@@ -195,7 +195,7 @@ export default function DeliveryInboundPage() {
             return false;
           }
           const blob = await exportDeliveryInbound({ exportMonth, excludeBatchNo });
-          downloadBlob(blob, inboundMonthFilename(exportMonth));
+          downloadBlob(blob, inboundMonthFilename(exportMonth, excludeBatchNo));
           setMonthOpen(false);
           setExcludeBatchNo(false);
           return true;

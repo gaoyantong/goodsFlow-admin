@@ -42,7 +42,8 @@ const chineseMonth = (exportMonth: string) => {
   return names[month - 1] || String(month);
 };
 
-const retailMonthFilename = (exportMonth: string) => `${chineseMonth(exportMonth)}月康每乐纯销流向.xlsx`;
+const retailMonthFilename = (exportMonth: string, excludeBatchNo: boolean) =>
+  `${chineseMonth(exportMonth)}月康每乐纯销流向${excludeBatchNo ? '' : '-有批号'}.xlsx`;
 const retailRangeFilename = (start: string, end: string) => `${start}_${end}月康每乐纯销流向.xlsx`;
 
 const formatStore = (record: RetailOutboundRecord) => [record.storeId, record.storeName].filter(Boolean).join(' ');
@@ -196,7 +197,7 @@ export default function RetailOutboundPage() {
             return false;
           }
           const blob = await exportRetailOutbound({ exportMonth, excludeBatchNo });
-          downloadBlob(blob, retailMonthFilename(exportMonth));
+          downloadBlob(blob, retailMonthFilename(exportMonth, excludeBatchNo));
           setMonthOpen(false);
           setExcludeBatchNo(false);
           return true;
