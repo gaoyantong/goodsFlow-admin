@@ -1,5 +1,12 @@
 import { DownloadOutlined } from '@ant-design/icons';
-import { ModalForm, PageContainer, ProColumns, ProFormDatePicker, ProFormDateRangePicker, ProTable } from '@ant-design/pro-components';
+import {
+  ModalForm,
+  PageContainer,
+  ProColumns,
+  ProFormDatePicker,
+  ProFormDateRangePicker,
+  ProTable,
+} from '@ant-design/pro-components';
 import { useLocation } from '@umijs/max';
 import { Button, message, Table } from 'antd';
 import { useState } from 'react';
@@ -12,8 +19,14 @@ const monthValue = (value: any) => {
   if (!value) {
     return undefined;
   }
-  const formatted = typeof value === 'string' ? value : value.format?.('YYYY-MM');
-  return formatted?.slice(0, 7);
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4})年(\d{1,2})月$/);
+    if (match) {
+      return `${match[1]}-${match[2].padStart(2, '0')}`;
+    }
+    return value.slice(0, 7);
+  }
+  return value.format?.('YYYY-MM');
 };
 
 const dateValue = (value: any) => {
@@ -23,19 +36,14 @@ const dateValue = (value: any) => {
   return typeof value === 'string' ? value : value.format?.('YYYY-MM-DD');
 };
 
-const quarterName = (exportMonth: string) => {
+const chineseMonth = (exportMonth: string) => {
+  const names = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
   const month = Number(exportMonth.slice(5, 7));
-  if (month <= 3) {
-    return '一季度';
-  }
-  if (month <= 6) {
-    return '二季度';
-  }
-  if (month <= 9) {
-    return '三季度';
-  }
-  return '四季度';
+  return names[month - 1] || String(month);
 };
+
+const retailMonthFilename = (exportMonth: string) => `${chineseMonth(exportMonth)}月康每乐纯销流向.xlsx`;
+const retailRangeFilename = (start: string, end: string) => `${start}_${end}月康每乐纯销流向.xlsx`;
 
 const formatStore = (record: RetailOutboundRecord) => [record.storeId, record.storeName].filter(Boolean).join(' ');
 const formatGoods = (record: RetailOutboundRecord) => [record.goodsId, record.genericName].filter(Boolean).join(' ');
@@ -188,7 +196,7 @@ export default function RetailOutboundPage() {
             return false;
           }
           const blob = await exportRetailOutbound({ exportMonth, excludeBatchNo });
-          downloadBlob(blob, `${quarterName(exportMonth)}康每乐纯销流向-有批号.xlsx`);
+          downloadBlob(blob, retailMonthFilename(exportMonth));
           setMonthOpen(false);
           setExcludeBatchNo(false);
           return true;
@@ -197,7 +205,8 @@ export default function RetailOutboundPage() {
         <ProFormDatePicker
           name="exportMonth"
           label="月份"
-          fieldProps={{ picker: 'month' }}
+          fieldProps={{ picker: 'month', format: 'YYYY年M月' }}
+          valueFormat="YYYY-MM"
           rules={[{ required: true, message: '请选择导出月份' }]}
         />
       </ModalForm>
@@ -214,7 +223,7 @@ export default function RetailOutboundPage() {
             return false;
           }
           const blob = await exportRetailOutbound({ businessDateStart: start, businessDateEnd: end });
-          downloadBlob(blob, `零售数据${start}-${end}.xlsx`);
+          downloadBlob(blob, retailRangeFilename(start, end));
           setDateRangeOpen(false);
           return true;
         }}

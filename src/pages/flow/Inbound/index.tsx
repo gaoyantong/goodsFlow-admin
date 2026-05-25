@@ -1,5 +1,12 @@
 import { DownloadOutlined } from '@ant-design/icons';
-import { ModalForm, PageContainer, ProColumns, ProFormDatePicker, ProFormDateRangePicker, ProTable } from '@ant-design/pro-components';
+import {
+  ModalForm,
+  PageContainer,
+  ProColumns,
+  ProFormDatePicker,
+  ProFormDateRangePicker,
+  ProTable,
+} from '@ant-design/pro-components';
 import { useLocation } from '@umijs/max';
 import { Button, message, Table } from 'antd';
 import { useState } from 'react';
@@ -12,8 +19,14 @@ const monthValue = (value: any) => {
   if (!value) {
     return undefined;
   }
-  const formatted = typeof value === 'string' ? value : value.format?.('YYYY-MM');
-  return formatted?.slice(0, 7);
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4})年(\d{1,2})月$/);
+    if (match) {
+      return `${match[1]}-${match[2].padStart(2, '0')}`;
+    }
+    return value.slice(0, 7);
+  }
+  return value.format?.('YYYY-MM');
 };
 
 const dateValue = (value: any) => {
@@ -23,10 +36,12 @@ const dateValue = (value: any) => {
   return typeof value === 'string' ? value : value.format?.('YYYY-MM-DD');
 };
 
-const inboundFilename = (exportMonth: string) => {
+const inboundMonthFilename = (exportMonth: string) => {
   const month = Number(exportMonth.slice(5, 7));
   return `中国中药${month}月.xlsx`;
 };
+
+const inboundRangeFilename = (start: string, end: string) => `中国中药${start}_${end}.xlsx`;
 
 const formatStore = (record: DeliveryInboundRecord) => [record.storeId, record.storeName].filter(Boolean).join(' ');
 const formatGoods = (record: DeliveryInboundRecord) => [record.goodsId, record.genericName].filter(Boolean).join(' ');
@@ -180,7 +195,7 @@ export default function DeliveryInboundPage() {
             return false;
           }
           const blob = await exportDeliveryInbound({ exportMonth, excludeBatchNo });
-          downloadBlob(blob, inboundFilename(exportMonth));
+          downloadBlob(blob, inboundMonthFilename(exportMonth));
           setMonthOpen(false);
           setExcludeBatchNo(false);
           return true;
@@ -189,7 +204,8 @@ export default function DeliveryInboundPage() {
         <ProFormDatePicker
           name="exportMonth"
           label="月份"
-          fieldProps={{ picker: 'month' }}
+          fieldProps={{ picker: 'month', format: 'YYYY年M月' }}
+          valueFormat="YYYY-MM"
           rules={[{ required: true, message: '请选择导出月份' }]}
         />
       </ModalForm>
@@ -206,7 +222,7 @@ export default function DeliveryInboundPage() {
             return false;
           }
           const blob = await exportDeliveryInbound({ businessDateStart: start, businessDateEnd: end });
-          downloadBlob(blob, `入库数据${start}-${end}.xlsx`);
+          downloadBlob(blob, inboundRangeFilename(start, end));
           setDateRangeOpen(false);
           return true;
         }}
