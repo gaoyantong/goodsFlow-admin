@@ -57,6 +57,11 @@ export default [
         path: '/flow/retail',
         component: './flow/Retail',
       },
+      {
+        name: '门店集合',
+        path: '/flow/store-collection',
+        component: './flow/StoreCollection',
+      },
     ],
   },
   {

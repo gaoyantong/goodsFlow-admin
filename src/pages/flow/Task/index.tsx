@@ -4,7 +4,9 @@ import {
   PageContainer,
   ProColumns,
   ProFormDatePicker,
+  ProFormDependency,
   ProFormDigit,
+  ProFormRadio,
   ProFormSelect,
   ProFormText,
   ProTable,
@@ -14,7 +16,7 @@ import { Button, message, Popconfirm } from 'antd';
 import { history } from '@umijs/max';
 import type { Key } from 'react';
 import { useRef, useState } from 'react';
-import { deleteFlowTask, deleteFlowTaskBatch, FlowTaskRecord, listFlowTasks, saveFlowTask } from '@/services/flow';
+import { deleteFlowTask, deleteFlowTaskBatch, FlowTaskRecord, listFlowTasks, listStoreCollections, saveFlowTask } from '@/services/flow';
 import { tablePagination } from '@/utils/pagination';
 import { loadGoodsOptions, loadStoreOptions, loadTaskNoOptions } from '../taskOptions';
 
@@ -29,6 +31,37 @@ const getDateRangeDays = (start?: string, end?: string) => {
   const endTime = getDateValue(end);
   if (startTime === undefined || endTime === undefined) return undefined;
   return Math.floor((endTime - startTime) / 86400000) + 1;
+};
+
+type FlowTaskForm = FlowTaskRecord & {
+  storeMode?: 'STORE' | 'COLLECTION';
+};
+
+const loadStoreCollectionOptions = async (params?: { keyWords?: string }) => {
+  const keyword = params?.keyWords?.trim();
+  const result = await listStoreCollections({
+    current: 1,
+    pageSize: 100,
+    collectionId: keyword,
+  });
+  const collectionList = result.data || [];
+
+  if (!collectionList.length && keyword) {
+    const fallback = await listStoreCollections({
+      current: 1,
+      pageSize: 100,
+      collectionName: keyword,
+    });
+    return (fallback.data || []).map((item) => ({
+      label: `${item.collectionId} ${item.collectionName}`,
+      value: item.collectionId,
+    }));
+  }
+
+  return collectionList.map((item) => ({
+    label: `${item.collectionId} ${item.collectionName}`,
+    value: item.collectionId,
+  }));
 };
 
 export default function FlowTaskPage() {
@@ -139,9 +172,10 @@ export default function FlowTaskPage() {
           </Button>,
         ]}
       />
-      <ModalForm<FlowTaskRecord>
+      <ModalForm<FlowTaskForm>
         title="新增药品录入"
         open={open}
+        initialValues={{ storeMode: 'STORE' }}
         modalProps={{ destroyOnClose: true, onCancel: () => setOpen(false) }}
         onFinish={async (values) => {
           const rangeDays = getDateRangeDays(values.deliveryStartDate, values.deliveryEndDate);
@@ -149,7 +183,18 @@ export default function FlowTaskPage() {
             message.warning('配送开始日期不能晚于配送截止日期');
             return false;
           }
-          const result = await saveFlowTask(values);
+          const submitValues = { ...values };
+          const collectionIds = (values.storeCollectionIds || []).filter(Boolean);
+          if (values.storeMode === 'COLLECTION' || collectionIds.length) {
+            submitValues.storeIds = undefined;
+            submitValues.storeCollectionId = undefined;
+            submitValues.storeCollectionIds = collectionIds;
+          } else {
+            submitValues.storeCollectionId = undefined;
+            submitValues.storeCollectionIds = undefined;
+          }
+          delete submitValues.storeMode;
+          const result = await saveFlowTask(submitValues);
           if (result.code !== 0) {
             message.error(result.message);
             return false;
@@ -177,17 +222,41 @@ export default function FlowTaskPage() {
         <ProFormDigit name="retailDays" label="生成零售天数" min={1} rules={[{ required: true }]} />
         <ProFormText name="batchNo" label="批号" rules={[{ required: true }]} />
         <ProFormDatePicker name="expiryDate" label="有效期" rules={[{ required: true }]} />
-        <ProFormSelect
-          name="storeIds"
-          label="指定门店"
-          mode="multiple"
-          request={loadStoreOptions}
-          fieldProps={{
-            showSearch: true,
-            filterOption: false,
-          }}
-          tooltip="不选择时默认使用全部门店"
+        <ProFormRadio.Group
+          name="storeMode"
+          label="门店选择方式"
+          options={[
+            { label: '指定门店', value: 'STORE' },
+            { label: '门店集合', value: 'COLLECTION' },
+          ]}
         />
+        <ProFormDependency name={['storeMode']}>
+          {({ storeMode }) => storeMode === 'COLLECTION' ? (
+            <ProFormSelect
+              name="storeCollectionIds"
+              label="门店集合"
+              mode="multiple"
+              request={loadStoreCollectionOptions}
+              fieldProps={{
+                showSearch: true,
+                filterOption: false,
+              }}
+              rules={[{ required: true, message: '请选择门店集合' }]}
+            />
+          ) : (
+            <ProFormSelect
+              name="storeIds"
+              label="指定门店"
+              mode="multiple"
+              request={loadStoreOptions}
+              fieldProps={{
+                showSearch: true,
+                filterOption: false,
+              }}
+              tooltip="不选择时默认使用全部门店"
+            />
+          )}
+        </ProFormDependency>
       </ModalForm>
     </PageContainer>
   );

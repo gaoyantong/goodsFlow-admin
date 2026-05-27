@@ -17,6 +17,7 @@ const pageTitles: Record<string, string> = {
   '/flow/task': '药品录入',
   '/flow/inbound': '入库数据',
   '/flow/retail': '零售数据',
+  '/flow/store-collection': '门店集合',
   '/sys/resource': '资源管理',
   '/sys/role': '角色管理',
   '/sys/user': '管理员',

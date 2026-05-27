@@ -5,6 +5,8 @@ import {
   ProColumns,
   ProFormDatePicker,
   ProFormDateRangePicker,
+  ProFormSelect,
+  ProFormText,
   ProTable,
 } from '@ant-design/pro-components';
 import { useLocation } from '@umijs/max';
@@ -36,12 +38,11 @@ const dateValue = (value: any) => {
   return typeof value === 'string' ? value : value.format?.('YYYY-MM-DD');
 };
 
-const inboundMonthFilename = (exportMonth: string, excludeBatchNo: boolean) => {
-  const month = Number(exportMonth.slice(5, 7));
-  return `中国中药${month}月${excludeBatchNo ? '' : '-有批号'}.xlsx`;
-};
+const inboundMonthFilename = (exportMonth: string, excludeBatchNo: boolean) =>
+  `配送数据${exportMonth}${excludeBatchNo ? '' : '-有批号'}.xlsx`;
 
-const inboundRangeFilename = (start: string, end: string) => `中国中药${start}_${end}.xlsx`;
+const inboundConditionFilename = (start?: string, end?: string) =>
+  start && end ? `配送数据${start}_${end}.xlsx` : '配送数据.xlsx';
 
 const formatStore = (record: DeliveryInboundRecord) => [record.storeId, record.storeName].filter(Boolean).join(' ');
 const formatGoods = (record: DeliveryInboundRecord) => [record.goodsId, record.genericName].filter(Boolean).join(' ');
@@ -52,7 +53,7 @@ export default function DeliveryInboundPage() {
   const taskId = searchParams.get('taskId') || undefined;
   const taskNo = searchParams.get('taskNo') || undefined;
   const [monthOpen, setMonthOpen] = useState(false);
-  const [dateRangeOpen, setDateRangeOpen] = useState(false);
+  const [conditionOpen, setConditionOpen] = useState(false);
   const [excludeBatchNo, setExcludeBatchNo] = useState(false);
 
   const columns: ProColumns<DeliveryInboundRecord>[] = [
@@ -151,9 +152,9 @@ export default function DeliveryInboundPage() {
           <Button
             key="dateRangeExport"
             icon={<DownloadOutlined />}
-            onClick={() => setDateRangeOpen(true)}
+            onClick={() => setConditionOpen(true)}
           >
-            日期范围导出
+            条件导出
           </Button>,
           <Button
             key="monthExport"
@@ -209,29 +210,33 @@ export default function DeliveryInboundPage() {
           rules={[{ required: true, message: '请选择导出月份' }]}
         />
       </ModalForm>
-      <ModalForm<{ exportDateRange: any[] }>
-        title="日期范围导出入库数据"
-        open={dateRangeOpen}
-        modalProps={{ destroyOnClose: true, onCancel: () => setDateRangeOpen(false) }}
+      <ModalForm<{ exportDateRange: any[]; goodsId?: string; batchNo?: string }>
+        title="条件导出入库数据"
+        open={conditionOpen}
+        modalProps={{ destroyOnClose: true, onCancel: () => setConditionOpen(false) }}
         onFinish={async (values) => {
           const range = values.exportDateRange || [];
           const start = dateValue(range[0]);
           const end = dateValue(range[1]);
-          if (!start || !end) {
-            message.warning('请选择导出日期范围');
-            return false;
-          }
-          const blob = await exportDeliveryInbound({ businessDateStart: start, businessDateEnd: end });
-          downloadBlob(blob, inboundRangeFilename(start, end));
-          setDateRangeOpen(false);
+          const blob = await exportDeliveryInbound({
+            businessDateStart: start,
+            businessDateEnd: end,
+            goodsId: values.goodsId,
+            batchNo: values.batchNo,
+          });
+          downloadBlob(blob, inboundConditionFilename(start, end));
+          setConditionOpen(false);
           return true;
         }}
       >
-        <ProFormDateRangePicker
-          name="exportDateRange"
-          label="业务日期"
-          rules={[{ required: true, message: '请选择导出日期范围' }]}
+        <ProFormDateRangePicker name="exportDateRange" label="业务日期" />
+        <ProFormSelect
+          name="goodsId"
+          label="货品"
+          request={loadGoodsOptions}
+          fieldProps={{ showSearch: true, filterOption: false }}
         />
+        <ProFormText name="batchNo" label="批号" />
       </ModalForm>
     </PageContainer>
   );

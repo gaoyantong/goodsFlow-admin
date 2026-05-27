@@ -13,6 +13,8 @@ export type FlowTaskRecord = {
   batchNo: string;
   expiryDate: string;
   storeScopeType?: string;
+  storeCollectionId?: string;
+  storeCollectionIds?: string[];
   status?: string;
   generatedAt?: number;
   storeIds?: string[];
@@ -50,6 +52,21 @@ export type RetailOutboundRecord = {
   unit: string;
   batchNo: string;
   outboundQty: number;
+};
+
+export type StoreCollectionStoreRecord = {
+  id?: string;
+  collectionDbId?: string;
+  collectionId?: string;
+  storeId: string;
+  storeName: string;
+};
+
+export type StoreCollectionRecord = {
+  id?: string;
+  collectionId?: string;
+  collectionName: string;
+  stores?: StoreCollectionStoreRecord[];
 };
 
 export async function listFlowTasks(params: Record<string, unknown>) {
@@ -106,6 +123,44 @@ export async function exportRetailOutbound(params: Record<string, unknown>) {
   return request<Blob>('/api/flow/retail/export', {
     method: 'POST',
     data: params,
+    responseType: 'blob',
+  });
+}
+
+export async function listStoreCollections(params: Record<string, unknown>) {
+  return request<ApiResponse<StoreCollectionRecord[]>>('/api/flow/storeCollection/list', {
+    method: 'POST',
+    data: params,
+  });
+}
+
+export async function saveStoreCollection(data: StoreCollectionRecord) {
+  return request<ApiResponse<StoreCollectionRecord>>('/api/flow/storeCollection/modify', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function deleteStoreCollection(id: string) {
+  return request<ApiResponse<void>>('/api/flow/storeCollection/delete', {
+    method: 'POST',
+    data: { id },
+  });
+}
+
+export async function importStoreCollectionStores(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request<ApiResponse<StoreCollectionStoreRecord[]>>('/api/flow/storeCollection/importStores', {
+    method: 'POST',
+    data: formData,
+    requestType: 'form',
+  });
+}
+
+export async function storeCollectionTemplate() {
+  return request<Blob>('/api/flow/storeCollection/template', {
+    method: 'GET',
     responseType: 'blob',
   });
 }
