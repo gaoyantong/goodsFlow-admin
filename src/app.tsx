@@ -48,6 +48,16 @@ const authorizedPaths = (menus: AuthorizedMenu[] = []) => {
   return paths;
 };
 
+const authorizedPathOrders = (menus: AuthorizedMenu[] = []) => {
+  const orders = new Map<string, number>();
+  const visit = (items: AuthorizedMenu[], prefix: string) => items.forEach((item, index) => {
+    orders.set(item.path, Number(`${prefix}${String(index + 1).padStart(3, '0')}`));
+    if (item.children?.length) visit(item.children, `${prefix}${String(index + 1).padStart(3, '0')}`);
+  });
+  visit(menus, '');
+  return orders;
+};
+
 export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
   const items: MenuProps['items'] = [
     { key: 'info', icon: <UserOutlined />, label: '个人信息' },
@@ -101,6 +111,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     },
     menuDataRender: (menuData) => {
       const paths = authorizedPaths(initialState?.menus);
+      const orders = authorizedPathOrders(initialState?.menus);
       const filterMenus = (items: typeof menuData): typeof menuData => items
         .map((item) => ({
           ...item,
@@ -109,7 +120,8 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         .filter((item) => {
           if (!item.path || item.path === '/' || item.path === '/login' || item.path === '/info') return false;
           return paths.has(item.path);
-        });
+        })
+        .sort((left, right) => (orders.get(left.path || '') ?? 999999) - (orders.get(right.path || '') ?? 999999));
       return filterMenus(menuData);
     },
   };

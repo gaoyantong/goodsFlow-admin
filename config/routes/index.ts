@@ -43,6 +43,11 @@ export default [
     icon: 'PartitionOutlined',
     routes: [
       {
+        name: '门店集合',
+        path: '/flow/store-collection',
+        component: './flow/StoreCollection',
+      },
+      {
         name: '药品录入',
         path: '/flow/task',
         component: './flow/Task',
@@ -56,11 +61,6 @@ export default [
         name: '零售数据',
         path: '/flow/retail',
         component: './flow/Retail',
-      },
-      {
-        name: '门店集合',
-        path: '/flow/store-collection',
-        component: './flow/StoreCollection',
       },
     ],
   },
