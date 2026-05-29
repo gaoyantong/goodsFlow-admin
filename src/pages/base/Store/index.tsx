@@ -30,7 +30,8 @@ export default function StorePage() {
   const { initialState } = (useModel as any)('@@initialState');
   const roleCode = initialState?.currentUser?.roleCode;
   const roleName = initialState?.currentUser?.roleName;
-  const canDelete = ['SUPER_ADMIN', 'ADMIN'].includes(roleCode) || ['超级管理员', '管理员'].includes(roleName);
+  const canDelete = ['SUPER_ADMIN', 'ADMIN', 'USER'].includes(roleCode)
+    || ['超级管理员', '管理员', '普通用户'].includes(roleName);
   const [editing, setEditing] = useState<StoreRecord>();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
